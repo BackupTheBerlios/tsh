@@ -128,25 +128,35 @@ public class ConnectionManager {
     }
         
     public static void writeRequestHeader(HttpConnection conn) throws IOException{
-    	conn.printLine("POST /tsh/service HTTP/1.0");
-    	conn.printLine("Host: 127.0.0.1:8080");
+              
+    	conn.printLine("POST /tsh/service2 HTTP/1.1");
+    	conn.printLine("Host: 10.70.0.133:8080");
     	conn.printLine("Connection: close, TE");
-    	conn.printLine("TE: trailers, deflate, gzip, compress");
-    	conn.printLine("User-Agent: RPT-HTTPClient/0.3-3");
-    	conn.printLine("Content-type: application/octet-stream");    	    	    	 
+    	//conn.printLine("Connection: close");
+    	//conn.printLine("TE: trailers, deflate, gzip, compress");
+    	conn.printLine("TE: ");
+    	//conn.printLine("User-Agent: RPT-HTTPClient/0.3-3");
+    	conn.printLine("User-Agent: Mozilla/4.0 (compatible)");    	
+    	conn.printLine("Accept-Language: es");
+    	conn.printLine("Content-type: application/octet-stream"); 
+    	conn.flushRequestOutputStream();
     }
     
-    public static void readResponseHeaders(HttpConnection conn) throws IOException, IllegalStateException {
+    public static boolean readResponseHeaders(HttpConnection conn) throws IOException, IllegalStateException {
     	//Leer response headers
     	String header = null;
+    	boolean chunked = false;
     	while (true) {
     		try {
 	    		header = conn.readLine();
 	    		if ( header.trim().compareTo("") == 0 ) break;
 	    		logger.debug("Header=>" + header);
+	    		chunked = (header.trim().compareToIgnoreCase("Transfer-Encoding: chunked") == 0);
     		}catch (SocketTimeoutException ste) {    		
     		}
     	}
+    	logger.debug ("chunked: " + chunked );
+    	return chunked;
     }
     
 

@@ -65,22 +65,28 @@ public class RemoteHttpOutputStream {
       if (conn != null) {
          conn.open();
          ConnectionManager.writeRequestHeader(conn);
-         conn.printLine("Content-length: 500000000");
+         conn.printLine("Content-length: " + Constants.CONTENT_LENGTH);
          conn.printLine();
-
+         conn.flushRequestOutputStream();
+         
          //Se añaden datos del protocol tsh a la peticion
          conn.printLine(Constants.PARAM_ACTION + "=" + Constants.COMMAND_OPENW);
          conn.printLine(Constants.PARAM_SERVICE + "=" + service);
          conn.printLine(Constants.PARAM_ID + "=" + getId());
          conn.flushRequestOutputStream();
 
-         ConnectionManager.readResponseHeaders(conn);
-
-         // TODO comprobar chunked
+         //Comprobar chunked
+         boolean chuncked = ConnectionManager.readResponseHeaders(conn);
 
          //Comprobar que se ha conectado correctamente
-         ResponseInputStream input =
-            new ResponseInputStream(conn.getResponseInputStream(), false, 5000000);
+         ResponseInputStream input = new ResponseInputStream(conn.getResponseInputStream(), chuncked, Constants.CONTENT_LENGTH);
+         int msg = input.read();                  
+         if (msg == Constants.MSG_OK) {
+            logger.debug("OpenW OK");
+         } else {
+            throw new Exception("Unable to connect to remote host: " + msg);
+         }
+         /*
          reader = new BufferedReader(new InputStreamReader(input));
          String result = reader.readLine();
          if (result != null && result.startsWith(Constants.COMMAND_OK)) {
@@ -88,6 +94,7 @@ public class RemoteHttpOutputStream {
          } else {
             throw new Exception("Unable to connect to remote host: " + result);
          }
+         */
 
       }
    }
@@ -122,14 +129,14 @@ public class RemoteHttpOutputStream {
     * @param tam
     * @param buffer
     */
-   public void writeBuffer(int tam, byte[] buffer) throws IOException {
-      // TODO Auto-generated method stub
+   public void writeBuffer(int tam, byte[] buffer) throws IOException {      
       this.getOutputStream().write(Constants.MSG_DATA);
       this.getOutputStream().write(new Integer(tam).byteValue());
       this.getOutputStream().write(new Integer(tam / 256).byteValue());
       this.getOutputStream().flush();
       this.getOutputStream().write(buffer, 0, tam);
       this.getOutputStream().flush();
+     
    }
 
 }

@@ -34,7 +34,7 @@ public class Session {
    private static final Random generador = new Random();
 
    //Identificador de sesion
-   private long idSesion = -1;
+   private int idSesion = -1;
 
    //Servicio
    private String service = null;
@@ -70,7 +70,7 @@ public class Session {
     */
    public Session(ServiceServerInfo sinfo) {
       contador++; //Se incrementa el numero de sesiones activas
-      this.idSesion = generador.nextLong();
+      this.idSesion = generador.nextInt(64000);
 
       this.service = sinfo.getName();
       this.host = sinfo.getHost();
@@ -84,7 +84,7 @@ public class Session {
     * 
     * @return Id de la sesion
     */
-   public long getId() {
+   public int getId() {
       return this.idSesion;
    }
 
@@ -180,23 +180,26 @@ public class Session {
     * @param out
     */
    public void setResponseWriter(OutputStream out) {
-      // TODO Auto-generated method stub//
+
+      logger.debug ("Entro en setResponseWriter");
 
       try {
          int read = 0;
          int readed = 0;
          byte[] buffer = new byte[Constants.MAX_READ];
          //Leer datos del servidor
+         logger.debug( "Esperando a leer del servidor para enviar el buffer al cliente" );
          while ((read = input.read(buffer)) >= 0) {
             readed += read;
             resetTime();
             out.write(Constants.MSG_DATA);
-            out.write(new Integer(read).byteValue());
-            out.write(new Integer(read / 256).byteValue());
+            out.write(read % 256);
+            out.write(read / 256);
             out.flush();
             logger.debug("Enviando al cliente bytes " + read);
             out.write(buffer, 0, read);
             out.flush();
+            logger.debug( "2 Esperando a leer del servidor para enviar el buffer al cliente" );
          }
 
       } catch (IOException e) {
@@ -221,15 +224,16 @@ public class Session {
     * @param out
     * @param reader
     */
-   public void setRequestWriter(InputStream input) {
-      // TODO Auto-generated method stub
+   public void setRequestWriter(InputStream input) {      
       //Leer datos y enviarlos al servidor
       int data = -1;
       int msg = -1, tam = -1, tam2 = -1;
       boolean fin = false;
+      logger.debug ("Entro en setRequestWriter");
       try {
          while (!fin) {
             try {
+               logger.debug("Leyendo cabecera de buffer del cliente");
                msg = input.read();
 
                switch (msg) {

@@ -54,40 +54,28 @@ public final class Constants {
     /** Parametro con el siguiente numero de secuencia en el protocolo */
     public static final String PARAM_NEXTSEQ = "ns";
 
-    //Comandos del protocolo
-
-    /** Comando para abrir una conexion con el servidor */
-    public static final String COMMAND_OPEN = "o";
-
+    //Comandos del protocolo que se envian al servidor en la peticion http
     /** Comando para abrir una conexion de escritura con el servidor */
     public static final String COMMAND_OPENW = "ow";
 
     /** Comando para abrir una conexion de lectura con el servidor */
     public static final String COMMAND_OPENR = "or";
 
-    /** Comando para cerrar una conexion */
-    public static final String COMMAND_CLOSE = "c";
-
-    /** Comando de ok */
-    public static final String COMMAND_OK = "ok";
-
-    /** Comando de error */
-    public static final String COMMAND_KO = "ko";
-
-    /** Comando para indicar escritura en el servidor */
-    public static final String COMMAND_WRITE = "w";
-
-    /** Comando para pedir si existen mas datos que leer del servidor */
-    public static final String COMMAND_READ = "r";
-
+   
     //Comandos de los buffers enviados
     /** Es un mensaje de datos, el byte siguiente indicará el tamaño del mensaje */
     public static final byte MSG_DATA = 55;
     public static final byte MSG_CLOSE = 56;
+    public static final byte MSG_OK = 57;
+    public static final byte MSG_KO = 58;
+    public static final byte MSG_CRR = 59;
+    public static final byte MSG_CRW = 60;
+    
+    public static final int CONTENT_LENGTH = 50000000;
+    
     
     
     //Constantes de configuracion
-
     /** URL del servidor */
     public static final String CONFIG_SERVER = "org.tsh.client.org.tsh.server";
 

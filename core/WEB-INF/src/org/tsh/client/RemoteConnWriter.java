@@ -53,7 +53,8 @@ public class RemoteConnWriter implements Runnable {
          while (readed >= 0 && !stop)
             try {
                readed = serverInput.readBuffer(buffer);
-               if (readed > 0) {
+               logger.debug ("Leidos del servidor " + readed + " bytes");
+               if (readed > 0) {                  
                   output.write(buffer, 0, readed);
                   logger.debug("Escritos al cliente " + readed + " bytes");
                   this.stat.addRecieve(readed);

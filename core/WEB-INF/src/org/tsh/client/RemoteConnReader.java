@@ -53,6 +53,7 @@ public class RemoteConnReader implements Runnable {
                if (readed > 0) {
                   logger.debug("Leidos del cliente " + readed + " bytes");
                   output.writeBuffer(readed, buffer);
+                  logger.debug ("Escritos al servidor " + readed + " bytes" );
                   this.stat.addSend(readed);
                }
             } catch (SocketTimeoutException ste) {

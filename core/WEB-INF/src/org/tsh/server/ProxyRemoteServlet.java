@@ -162,6 +162,7 @@ public class ProxyRemoteServlet extends HttpServlet {
         String service,
         ServletInputStream input,
         ServletOutputStream out) {
+       	logger.debug ("Entro en doOpenWrite");
         Session session = sessionManager.get(sessionId);
 
         try {
@@ -170,14 +171,14 @@ public class ProxyRemoteServlet extends HttpServlet {
             if (session == null) {
                 logger.warn(
                     "Recibido una peticion de open write para una conexion cerrada " + sessionId);
-                out.println(Constants.COMMAND_KO);
+                out.write(Constants.MSG_KO);                
                 out.flush();
                 return;
             }
             //Envio COMMAND_OK al cliente
-            out.println(Constants.COMMAND_OK);
+            out.write(Constants.MSG_OK);            
             out.flush();
-
+            logger.debug("Enviado comando OK por OpenWrite");
             //Leer datos y enviarlos al servidor
             session.setRequestWriter(input);
         } catch (IOException e) {
@@ -192,25 +193,28 @@ public class ProxyRemoteServlet extends HttpServlet {
 	 * @param response
 	 */
     private void doOpenRead(String service, ServletOutputStream out) throws IOException {
+       	logger.debug("Entro en doOpenRead");
         try {
             Session session = sessionManager.createSession(service);
 
             if (session == null) {
                 logger.info("Servicio no encontrado " + service);
-                out.print(Constants.COMMAND_KO);
+                out.write(Constants.MSG_KO);                
             } else {
                 session.open();
                 sessionManager.add(session);
                 //Enviar id de sesion al cliente
-                out.println(Constants.COMMAND_OK);
-                out.println(session.getId());
+                out.write(Constants.MSG_OK);
+                out.write(session.getId() % 256);
+                out.write(session.getId() / 256);
                 out.flush();
+                logger.debug("Enviado comando OK por OpenRead");
                 //Tratar el response
                 session.setResponseWriter(out);
             }
         } catch (Throwable e) {
             logger.warn("Procesando petición de abrir conexion de lectura ", e);
-            out.print(Constants.COMMAND_KO);
+            out.write(Constants.MSG_KO);
         }
     }
 
