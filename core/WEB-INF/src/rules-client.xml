@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<digester-rules>
+   <object-create-rule pattern="services" classname="java.util.ArrayList" />
+  
+   <pattern value="services/service">
+      <object-create-rule classname="org.tsh.client.ServiceInfo" />
+      <call-method-rule pattern="name" methodname="setName" paramcount="0" />
+      <call-method-rule pattern="localPort" methodname="setLocalPort" paramcount="0" />
+      <call-method-rule pattern="maxConnections" methodname="setMaxConnections" paramcount="0"/>
+      <call-method-rule pattern="useProxy" methodname="setUseProxy" paramcount="0" />
+      <call-method-rule pattern="proxyHost" methodname="setProxyHost" paramcount="0" />
+      <call-method-rule pattern="proxyPort" methodname="setProxyPort" paramcount="0" />
+      <call-method-rule pattern="proxyUser" methodname="setProxyUser" paramcount="0" />
+      <call-method-rule pattern="proxyPassword" methodname="setProxyPassword" paramcount="0" />
+      <call-method-rule pattern="useHttps" methodname="setUseHttps" paramcount="0" />
+      <call-method-rule pattern="serverURL" methodname="setServerURL" paramcount="0" />
+      <call-method-rule pattern="user" methodname="setUser" paramcount="0" />
+      <call-method-rule pattern="password" methodname="setPassword" paramcount="0" />      
+      <set-next-rule methodname="add" />
+   </pattern>
+  
+</digester-rules>

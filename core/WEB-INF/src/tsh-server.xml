@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<server>
+    <service>
+        <name>POP</name>
+        <host>127.0.0.1</host>
+        <port>110</port>
+        <user>user</user>
+        <sessionTimeout>60000</sessionTimeout>
+        <password>password</password>
+        <acl></acl>        
+    </service>
+    <service>
+        <name>CVS</name>
+        <host>localhost</host>
+        <port>23</port>
+        <sessionTimeout>60000</sessionTimeout>
+        <acl></acl>
+        
+    </service>
+    <service>
+        <name>SMTP</name>
+        <host>127.0.0.1</host>
+        <port>25</port>
+        <sessionTimeout>60000</sessionTimeout>
+        <acl></acl>        
+    </service>
+    <service>
+        <name>POSTGRES</name>
+        <host>127.0.0.1</host>
+        <port>5432</port>
+        <sessionTimeout>60000</sessionTimeout>
+        <acl></acl>        
+    </service>
+</server>

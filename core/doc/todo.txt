@@ -1,0 +1,36 @@
+* Manejo de la conexion Http utilizando 2 conexiones.
+
+* Añadir "keep-alive" y algun otro parametro mas.
+
+* Mirar que pasa cuando el cliente no manda nada durante un largo tiempo
+
+* Timeout de sesion en cliente
+
+* Comprobar que se cierran las conexiones en servidor
+
+* Añadir un timestamp como secuencia en las peticiones entre cliente y servidor, para "garantizar" que no se conectan falsea
+  la identidad del cliente. (tiene problemas con la forma de 
+  devolver los datos por el servidor)
+  
+* ACL para permitir conexiones en cliente y en servidor.  
+  
+* Administracion del servidor y del cliente por http
+
+
+- Mejorar el envio de datos al servidor. El tamaño del Post podia ser
+  de 1Mb.
+- Arreglado un bug en el Servlet cuando se leian mas de 1Mb de el servidor POP.
+  Ahora se ha puesto como limite de lectura un 1Mb y si es mas se realizan en
+  varios trozos.
+- Configuracion del cliente
+- Utilizacion de http/https  por configuracion 
+- Autentificacion en Apache -> Hecho. HttpClient
+- Comprobada conexion por https -> Hay que meter el certificado de vector en la maquina virtual
+   1.  keytool -v -import -file vectorsf.cer -trustcacerts -keystore "d:\workspace\tsh\certificados"
+   2. Parametros de la maquina virtual: -Djavax.net.ssl.trustStore=d:\workspace\tsh\certificados -Djavax.net.ssl.trustStorePassword=vector
+
+- Threads en cliente. Numero maximo de conexiones permitidas
+- Configuracion del servidor. Servicios en un fichero
+- Generacion del numero de sesion aleatorio
+- Timeout de sesion en el servidor. Añadido parametro al fichero
+  de configuracion
