@@ -1,6 +1,7 @@
 package org.tsh.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
@@ -15,7 +16,9 @@ import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpRecoverableException;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.ResponseInputStream;
 import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -119,28 +122,16 @@ public class ConnectionManager {
 		   //Hay que usar proxy
 		   hconf.setProxy(this.proxyHost,this.proxyPort);
 		}
-		hconf.setHost(new URI(this.getServerURL()));
+		URI uri = new URI(this.getServerURL());
+		hconf.setHost(uri);
         HttpConnection conn = connManager.getConnection(hconf);
         logger.debug("Conexiones en uso " +  connManager.getConnectionsInUse(hconf) + "/" + connManager.getConnectionsInUse());
 		//HttpConnection conn = new HttpConnection(hconf);
-        conn.setSoTimeout(Constants.READ_TIMEOUT);
-        return conn;
-    }
+        conn.setSoTimeout(Constants.READ_TIMEOUT);       
+                
         
-    public static void writeRequestHeader(HttpConnection conn) throws IOException{
-              
-    	conn.printLine("POST /tsh/service2 HTTP/1.1");
-    	conn.printLine("Host: 10.70.0.133:8080");
-    	conn.printLine("Connection: close, TE");
-    	//conn.printLine("Connection: close");
-    	//conn.printLine("TE: trailers, deflate, gzip, compress");
-    	conn.printLine("TE: ");
-    	//conn.printLine("User-Agent: RPT-HTTPClient/0.3-3");
-    	conn.printLine("User-Agent: Mozilla/4.0 (compatible)");    	
-    	conn.printLine("Accept-Language: es");
-    	conn.printLine("Content-type: application/octet-stream"); 
-    	conn.flushRequestOutputStream();
-    }
+        return conn;
+    }       
     
     public static boolean readResponseHeaders(HttpConnection conn) throws IOException, IllegalStateException {
     	//Leer response headers
@@ -158,6 +149,39 @@ public class ConnectionManager {
     	logger.debug ("chunked: " + chunked );
     	return chunked;
     }
+
+   /**
+    * @param conn
+    * @param serverURL2
+    */
+   public static void writeRequestHeader(HttpConnection conn, String serverURL) throws HttpRecoverableException, IllegalStateException, URIException, IOException  {
+      URI uri = new URI(serverURL);
+      // Se escribe la cabecera HTTP
+      conn.printLine("POST " + uri.getPath() +  " HTTP/1.1");
+      conn.printLine("Host: " + uri.getHost());
+      conn.printLine("Connection: close, TE");
+      //conn.printLine("TE: trailers, deflate, gzip, compress");
+      conn.printLine("TE: ");      
+      conn.printLine("User-Agent: Mozilla/4.0 (compatible)");    	
+      conn.printLine("Accept-Language: es");
+      conn.printLine("Content-type: application/octet-stream"); 
+      conn.flushRequestOutputStream();
+      
+   }
+
+   /**
+    * Lee la cabecera de la respuesta HTTP y obtiene el InputStream de lectura
+    * @param conn Conexion
+    * @return InputStream de escritura
+    */
+   public static InputStream getInputStream(HttpConnection conn) throws IllegalStateException, IOException {
+      //comprobar chuncked
+      boolean chuncked = ConnectionManager.readResponseHeaders(conn);
+      
+      //Esperando OK e id de la peticion
+      return new ResponseInputStream(conn.getResponseInputStream(), chuncked, Constants.CONTENT_LENGTH);
+            
+   }
     
 
 }

@@ -6,19 +6,14 @@ package org.tsh.common;
  * @author jmgarcia
  */
 public final class Constants {
-    //Id para decir que no hay sesion
 
-    /** DOCUMENT ME!*/
+    /** Id para decir que no hay sesion*/
     public static final int NO_SESSION = -1;
 
-    //Numero de conexiones maximas por servicio(valor por defecto)
-
-    /** DOCUMENT ME!*/
+    /** Numero de conexiones maximas por servicio (valor por defecto)*/
     public static final int MAXCONNECTIONS_CLIENT = 10;
 
-    //Numero de timeouts antes de enviar una peticion de read.
-
-    /** DOCUMENT ME!*/
+    /** Numero de timeouts antes de enviar una peticion de read.*/
     public static final int MAXTIMEOUTS = 5;
 
     /** DOCUMENT ME! */
@@ -33,9 +28,6 @@ public final class Constants {
     /** Maximo numero de bytes leidos del cliente remoto para enviar al servidor */
     public static final int CLIENT_MAX_READED = 1000000;
 
-    /** DOCUMENT ME! */
-    public static final String CHARSET = "UTF-8";
-
     /** Parametro action de una conexion */
     public static final String PARAM_ACTION = "action";
 
@@ -44,16 +36,7 @@ public final class Constants {
 
     /** Parametro servicio de la peticion */
     public static final String PARAM_SERVICE = "service";
-
-    /** Parametro para el envio de los datos */
-    public static final String PARAM_DATA = "d";
-
-    /** Parametro que indica el tamaï¿½o de los datos enviados */
-    public static final String PARAM_DATALENGTH = "dl";
-
-    /** Parametro con el siguiente numero de secuencia en el protocolo */
-    public static final String PARAM_NEXTSEQ = "ns";
-
+   
     //Comandos del protocolo que se envian al servidor en la peticion http
     /** Comando para abrir una conexion de escritura con el servidor */
     public static final String COMMAND_OPENW = "ow";
@@ -62,7 +45,7 @@ public final class Constants {
     public static final String COMMAND_OPENR = "or";
 
    
-    //Comandos de los buffers enviados
+    //Comandos de los mensajes enviados
     /** Es un mensaje de datos, el byte siguiente indicará el tamaño del mensaje */
     public static final byte MSG_DATA = 55;
     public static final byte MSG_CLOSE = 56;
@@ -71,6 +54,10 @@ public final class Constants {
     public static final byte MSG_CRR = 59;
     public static final byte MSG_CRW = 60;
     
+    /** Tamaño (num. bytes) de la cabecera de los MSG*/
+    public static final int MSG_HEAD_TAM = 3;
+
+    /** Tamaño máximo del content_length */
     public static final int CONTENT_LENGTH = 50000000;
     
     
@@ -81,8 +68,6 @@ public final class Constants {
 
     /** Usar proxy */
     public static final String CONFIG_USEPROXY = "org.tsh.client.useProxy";
-
-  
 
     /** Host del proxy */
     public static final String CONFIG_PROXYHOST = "org.tsh.client.proxyHost";

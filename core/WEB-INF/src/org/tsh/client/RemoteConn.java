@@ -63,7 +63,7 @@ public class RemoteConn {
                         
         try {
         	//Abrir RemoteHttpInputStream
-            this.inputServidor = new RemoteHttpInputStream(service,conn.getHttpConnection());
+            this.inputServidor = new RemoteHttpInputStream(service,conn.getHttpConnection(),conn.getServerURL());
             this.inputServidor.open();        
         
             //Obtener id de la sesion
@@ -79,7 +79,7 @@ public class RemoteConn {
             this.proxy.setId(id);
             
             //Abrir RemoteHttpOutputStream
-            outputServidor = new RemoteHttpOutputStream(id,service,conn.getHttpConnection());
+            outputServidor = new RemoteHttpOutputStream(id,service,conn.getHttpConnection(),conn.getServerURL());
             outputServidor.open();
         
         }

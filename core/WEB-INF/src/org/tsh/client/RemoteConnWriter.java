@@ -38,7 +38,7 @@ public class RemoteConnWriter implements Runnable {
       this.serverInput = serverInput;
       this.output = output;
       this.conn = conn;
-      this.stat = stat;
+      this.stat = stat;      
    }
 
    /**

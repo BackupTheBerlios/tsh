@@ -2,16 +2,17 @@ package org.tsh.remote;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 
 import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.ResponseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tsh.client.ConnectionManager;
 import org.tsh.common.Constants;
+import org.tsh.common.Util;
 
 /**
  * Gestiona una conexión para escritura del servidor remoto Fecha 15-mar-2004
@@ -33,16 +34,18 @@ public class RemoteHttpOutputStream {
    private HttpConnection conn = null;
 
    private BufferedReader reader = null;
+   private String serverURL = null;
 
    /**
     *  
     */
-   public RemoteHttpOutputStream(long id, String service, HttpConnection connection) {
+   public RemoteHttpOutputStream(long id, String service, HttpConnection connection, String serverURL) {
       super();
       //Obtiene una conexion
       conn = connection;
       this.id = id;
       this.service = service;
+      this.serverURL = serverURL;
    }
 
    /**
@@ -64,7 +67,7 @@ public class RemoteHttpOutputStream {
       //Realiza la conexion
       if (conn != null) {
          conn.open();
-         ConnectionManager.writeRequestHeader(conn);
+         ConnectionManager.writeRequestHeader(conn,serverURL);
          conn.printLine("Content-length: " + Constants.CONTENT_LENGTH);
          conn.printLine();
          conn.flushRequestOutputStream();
@@ -74,28 +77,21 @@ public class RemoteHttpOutputStream {
          conn.printLine(Constants.PARAM_SERVICE + "=" + service);
          conn.printLine(Constants.PARAM_ID + "=" + getId());
          conn.flushRequestOutputStream();
-
-         //Comprobar chunked
-         boolean chuncked = ConnectionManager.readResponseHeaders(conn);
-
-         //Comprobar que se ha conectado correctamente
-         ResponseInputStream input = new ResponseInputStream(conn.getResponseInputStream(), chuncked, Constants.CONTENT_LENGTH);
-         int msg = input.read();                  
-         if (msg == Constants.MSG_OK) {
-            logger.debug("OpenW OK");
+         
+         //Obtener inputstream de lectura del response de la conexion
+         InputStream input = ConnectionManager.getInputStream(conn);
+         
+         //Leer cabecera del mensaje de respuesta
+         MsgHead head = new MsgHead();
+         int readed = Util.readMsgHead(input,head);
+                  
+         //Comprobar codigo de retorno                
+         if ( readed != -1 && head.getMsg() == Constants.MSG_OK) {
+            int id = head.getData();
+            logger.debug("OpenW OK, id" + id);
          } else {
-            throw new Exception("Unable to connect to remote host: " + msg);
-         }
-         /*
-         reader = new BufferedReader(new InputStreamReader(input));
-         String result = reader.readLine();
-         if (result != null && result.startsWith(Constants.COMMAND_OK)) {
-            logger.debug("OpenW OK");
-         } else {
-            throw new Exception("Unable to connect to remote host: " + result);
-         }
-         */
-
+            throw new Exception("Unable to connect to remote host: " + head.getMsg());
+         }         
       }
    }
 
@@ -106,7 +102,7 @@ public class RemoteHttpOutputStream {
       if (conn != null) {
          try {
             //Se envia mensaje de cerrar la conexion
-            this.getOutputStream().write(Constants.MSG_CLOSE);
+            Util.writeMsgHead(this.getOutputStream(),new MsgHead(Constants.MSG_CLOSE,0));            
             this.getOutputStream().flush();
          } catch (IOException e) {
             logger.warn("Enviando mensaje de cerrar conexion de escritura en servidor", e);
@@ -126,14 +122,14 @@ public class RemoteHttpOutputStream {
    }
 
    /**
+    * Escribe 
     * @param tam
     * @param buffer
     */
    public void writeBuffer(int tam, byte[] buffer) throws IOException {      
-      this.getOutputStream().write(Constants.MSG_DATA);
-      this.getOutputStream().write(new Integer(tam).byteValue());
-      this.getOutputStream().write(new Integer(tam / 256).byteValue());
-      this.getOutputStream().flush();
+      //Escribir cabecera del mensaje
+      Util.writeMsgHead(this.getOutputStream(),new MsgHead(Constants.MSG_DATA,tam));            
+      //Escribir buffer
       this.getOutputStream().write(buffer, 0, tam);
       this.getOutputStream().flush();
      

@@ -1,6 +1,8 @@
 package org.tsh.server;
 
 import org.tsh.common.Constants;
+import org.tsh.common.Util;
+import org.tsh.remote.MsgHead;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,7 +72,7 @@ public class Session {
     */
    public Session(ServiceServerInfo sinfo) {
       contador++; //Se incrementa el numero de sesiones activas
-      this.idSesion = generador.nextInt(64000);
+      this.idSesion = generador.nextInt(16384);
 
       this.service = sinfo.getName();
       this.host = sinfo.getHost();
@@ -192,11 +194,8 @@ public class Session {
          while ((read = input.read(buffer)) >= 0) {
             readed += read;
             resetTime();
-            out.write(Constants.MSG_DATA);
-            out.write(read % 256);
-            out.write(read / 256);
-            out.flush();
             logger.debug("Enviando al cliente bytes " + read);
+            Util.writeMsgHead(out,new MsgHead(Constants.MSG_DATA,read));            
             out.write(buffer, 0, read);
             out.flush();
             logger.debug( "2 Esperando a leer del servidor para enviar el buffer al cliente" );
@@ -225,57 +224,52 @@ public class Session {
     * @param reader
     */
    public void setRequestWriter(InputStream input) {      
-      //Leer datos y enviarlos al servidor
-      int data = -1;
-      int msg = -1, tam = -1, tam2 = -1;
+      //Leer datos y enviarlos al servidor      
+      int data = -1, tam = -1;
       boolean fin = false;
+      MsgHead head = new MsgHead();
       logger.debug ("Entro en setRequestWriter");
       try {
          while (!fin) {
-            try {
-               logger.debug("Leyendo cabecera de buffer del cliente");
-               msg = input.read();
-
-               switch (msg) {
-                  case -1 :
-                     //Se ha cerrado la conexion
-                     fin = true;
-                     break;
-                  case Constants.MSG_CLOSE :
-                     //Cerra esta conexion (indicado por el cliente)
-                     fin = true;
-                     break;
-                  case Constants.MSG_DATA :
-                     //Recibidos datos
-                     tam = input.read();
-                     tam2 = input.read();
-                     if (tam == -1 || tam2 == -1)
-                        break;
-                     tam += tam2 * 256;
-                     logger.debug("Recibiendo buffer de " + tam + "," + msg);
-                     for (int i = 0; i < tam && !fin;) {
-                        try {
-                           data = input.read();
-                           i++;
-                           resetTime();
-                           if (data == -1) {
-                              fin = true;
-                           }else {	                           	                           
-	                           output.write(data);
-	                           output.flush();
-                           }
-                        } catch (SocketTimeoutException ste) {
-                           logger.debug("Time out de lectura del cliente");
+            //Leer cabecera del mensaje
+            logger.debug("Leyendo cabecera de buffer del cliente");
+            if ( Util.readMsgHead(input,head) == -1 ) break;
+          
+            switch (head.getMsg()) {
+               case -1 :
+                  //Se ha cerrado la conexion
+                  fin = true;
+                  break;
+               case Constants.MSG_CLOSE :
+                  //Cerra esta conexion (indicado por el cliente)
+                  fin = true;
+                  break;
+               case Constants.MSG_DATA :
+                  //Recibido mensaje de datos                     
+                  tam = head.getData();
+                  logger.debug("Recibiendo buffer de " + tam );
+                  
+                  for (int i = 0; i < tam && !fin;) {
+                     try {
+                        data = input.read();
+                        i++;
+                        resetTime();
+                        if (data == -1) {
+                           fin = true;
+                        }else {	                           	                           
+                           output.write(data);
+                           output.flush();
                         }
+                     } catch (SocketTimeoutException ste) {
+                        logger.debug("Time out de lectura del cliente");
                      }
-                     break;
-                  default :
-                     logger.warn("Error en protocolo leyendo datos del cliente");
-                     break;
-               }
-            } catch (SocketTimeoutException ste) {
-               logger.debug("Time out de lectura de cabecera del cliente");
+                  }
+                  break;
+               default :
+                  logger.warn("Error en protocolo leyendo datos del cliente");
+                  break;
             }
+            
          }
       } catch (IOException e) {
          if (this.output != null) {

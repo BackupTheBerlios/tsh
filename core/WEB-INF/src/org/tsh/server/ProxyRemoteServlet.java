@@ -17,6 +17,8 @@ import org.apache.commons.digester.xmlrules.DigesterLoader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tsh.common.Constants;
+import org.tsh.common.Util;
+import org.tsh.remote.MsgHead;
 import org.xml.sax.SAXException;
 
 /**
@@ -40,7 +42,8 @@ public class ProxyRemoteServlet extends HttpServlet {
     private static final Log logger = LogFactory.getLog(ProxyRemoteServlet.class);
 
     /**
-	 * Init
+	 * Init del server. Se leen los ficheros de configuración del web.xml
+	 * y se obtiene la configuración del fichero
 	 * 
 	 * @see javax.servlet.GenericServlet#init()
 	 */
@@ -84,7 +87,7 @@ public class ProxyRemoteServlet extends HttpServlet {
 	 */
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
-
+        //Obtener streams de lectura y escritura
         ServletInputStream input = request.getInputStream();
         ServletOutputStream output = response.getOutputStream();
         //Leer Cabecera de la peticion
@@ -126,9 +129,9 @@ public class ProxyRemoteServlet extends HttpServlet {
     /**
 	 * Lee un parametro de la cabecera del protocolo tsh
 	 * 
-	 * @param stream
-	 * @param string
-	 * @return
+	 * @param stream Stream de lectura
+	 * @param param Parametro a leer
+	 * @return valor del parametro
 	 */
     private String getParam(ServletInputStream stream, String param) {
         String value = "";
@@ -161,28 +164,26 @@ public class ProxyRemoteServlet extends HttpServlet {
         long sessionId,
         String service,
         ServletInputStream input,
-        ServletOutputStream out) {
+        ServletOutputStream out) throws IOException {
        	logger.debug ("Entro en doOpenWrite");
         Session session = sessionManager.get(sessionId);
 
         try {
-
             //No existe la session
             if (session == null) {
                 logger.warn(
                     "Recibido una peticion de open write para una conexion cerrada " + sessionId);
-                out.write(Constants.MSG_KO);                
-                out.flush();
+                Util.writeMsgHead(out,new MsgHead(Constants.MSG_KO,0));
                 return;
             }
             //Envio COMMAND_OK al cliente
-            out.write(Constants.MSG_OK);            
-            out.flush();
+            Util.writeMsgHead(out,new MsgHead(Constants.MSG_OK,session.getId()));
             logger.debug("Enviado comando OK por OpenWrite");
             //Leer datos y enviarlos al servidor
             session.setRequestWriter(input);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             logger.warn("Procesando petición de abrir conexion de escritura", e);
+            Util.writeMsgHead(out,new MsgHead(Constants.MSG_KO,0));
         }
     }
 
@@ -199,44 +200,19 @@ public class ProxyRemoteServlet extends HttpServlet {
 
             if (session == null) {
                 logger.info("Servicio no encontrado " + service);
-                out.write(Constants.MSG_KO);                
+                Util.writeMsgHead(out,new MsgHead(Constants.MSG_KO,0));                        
             } else {
                 session.open();
                 sessionManager.add(session);
                 //Enviar id de sesion al cliente
-                out.write(Constants.MSG_OK);
-                out.write(session.getId() % 256);
-                out.write(session.getId() / 256);
-                out.flush();
+                Util.writeMsgHead(out,new MsgHead(Constants.MSG_OK,session.getId()));                                
                 logger.debug("Enviado comando OK por OpenRead");
                 //Tratar el response
                 session.setResponseWriter(out);
             }
         } catch (Throwable e) {
             logger.warn("Procesando petición de abrir conexion de lectura ", e);
-            out.write(Constants.MSG_KO);
+            Util.writeMsgHead(out,new MsgHead(Constants.MSG_KO,0));
         }
     }
-
-    /**
-	 * Cierra una sesion
-	 * 
-	 * @param sessionId
-	 */
-    private void doClose(long sessionId) {
-        Session session = sessionManager.remove(sessionId);
-
-        if (session == null) {
-            logger.warn("Recibido una peticion de close para una conexion cerrada " + sessionId);
-        } else {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Cerrando sesion " + session);
-            }
-            session.close();
-            if (logger.isInfoEnabled()) {
-                logger.info("Cerranda sesion " + session);
-            }
-        }
-    }
-
 }

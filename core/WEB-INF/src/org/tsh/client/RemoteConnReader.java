@@ -35,7 +35,7 @@ public class RemoteConnReader implements Runnable {
       this.conn = conn;
       this.input = input;
       this.output = output;
-      this.stat = stat;
+      this.stat = stat;      
    }
 
    /**

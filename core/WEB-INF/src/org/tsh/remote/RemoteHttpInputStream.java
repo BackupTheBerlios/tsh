@@ -2,14 +2,15 @@ package org.tsh.remote;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketTimeoutException;
 
 import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.ResponseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tsh.client.ConnectionManager;
 import org.tsh.common.Constants;
+import org.tsh.common.Util;
 
 /**
  * Gestiona una conexión Http para lectura del servidor remoto Fecha 15-mar-2004
@@ -27,15 +28,17 @@ public class RemoteHttpInputStream {
 
    private HttpConnection conn = null;
    private BufferedReader reader = null;
-   private ResponseInputStream input = null;
+   private InputStream input = null;
+   private String serverURL = null;
    
    /**
     *  
     */
-   public RemoteHttpInputStream(String service, HttpConnection connection) {
+   public RemoteHttpInputStream(String service, HttpConnection connection, String serverURL) {
       super();
-      conn = connection;
+      this.conn = connection;
       this.service = service;
+      this.serverURL = serverURL;
    }
 
 
@@ -47,10 +50,9 @@ public class RemoteHttpInputStream {
       if (conn != null) {
          //Abrir Conexion
          conn.open();
-
-         //Escribir Request Header basicas
-         ConnectionManager.writeRequestHeader(conn);
-
+         //Escribir cabecera HTTP
+         ConnectionManager.writeRequestHeader(conn,serverURL);      
+         
          //Content-length enorme para que no se corte
          conn.printLine("Content-length: " + Constants.CONTENT_LENGTH);
          conn.printLine(); // close head
@@ -62,19 +64,19 @@ public class RemoteHttpInputStream {
          conn.printLine(Constants.PARAM_ID + "=" + getId());
          conn.flushRequestOutputStream();
          
-         //comprobar chuncked
-         boolean chuncked = ConnectionManager.readResponseHeaders(conn);
-        
-         //Esperando OK e id de la peticion
-         input = new ResponseInputStream(conn.getResponseInputStream(), chuncked, Constants.CONTENT_LENGTH);
-         int msg = input.read();         
-         int id1 = input.read();
-         int id2 = input.read();
-         if (msg == Constants.MSG_OK) {
-            setId (id1+(id2*256));
+         //Obtengo el inputStream de lectura de la conexion
+         input = ConnectionManager.getInputStream(conn);
+         
+         //Leer cabecera del mensaje de respuesta
+         MsgHead head = new MsgHead();
+         int readed = Util.readMsgHead(input,head);
+         
+         //Comprobar codigo de respuesta y leer Id
+         if (readed != -1 && head.getMsg() == Constants.MSG_OK) {
+            setId (head.getData());
          	logger.debug("OpenR OK");
          } else {
-        	   throw new Exception("Unable to connect to remote host: " + msg);
+        	   throw new Exception("Unable to connect to remote host: " + head.getMsg());
          }	
          
       }
@@ -110,27 +112,20 @@ public class RemoteHttpInputStream {
    }
 
    /**
-    * @param buffer
-    * @return
+    * Lee un mensaje de datos del servidor
+    * @param buffer Se almacenan los datos del mensaje
+    * @return -1 EOF, ok e.o.c
     */
    public int readBuffer(byte[] buffer) throws IOException {
-      int readed = -1, i = 0;
-      int tam = -1, tam2 = -1, msg = -1;
-      boolean fin = false;
-
-      //msg = this.input.read();
+      int tam = -1,readed = -1;
+      MsgHead head = new MsgHead();            
       
       //Lee la cabecera     
-      while (!fin) {
-         try {
-            msg = this.input.read();
-            fin = true;
-         } catch (SocketTimeoutException ste) {
-            logger.debug("Time out de lectura cabecera del servidor");
-         }
-      }
+      readed = Util.readMsgHead(this.input,head);
+      if ( readed == -1 ) return -1; //Leido EOF antes de leer la cabecera
+      
       //En funcion de la cabecera realiza lo que corresponda
-      switch (msg) {
+      switch (head.getMsg()) {
          case -1 :
             //Se ha cerrado la conexion
             logger.debug("Se ha cerrado la conexion del servidor");
@@ -140,30 +135,18 @@ public class RemoteHttpInputStream {
             logger.debug ("Recibido MSG_CLOSE del servidor");
             break;                 
          case Constants.MSG_DATA :         
-            //Recibidos datos
-            tam = this.input.read();
-            tam2 = this.input.read();
-            if (tam == -1 || tam2 == -1) {
-               tam = -1;            
-               break;
-            }
-            tam += tam2 * 256;
-            logger.debug("Recibido MSG_DATA del servidor, recibiendo buffer de " + tam + "," + msg);
-            for (i = 0; i < tam;) {
-               try {
-                  readed = this.input.read(buffer, i, tam - i);
-                  i += readed;
-                  if (readed == -1) {
-                     tam = -1;
-                  }
-               } catch (SocketTimeoutException ste) {
-                  logger.debug("Time out de lectura del servidor");
-               }
-            }
-            logger.debug("Recibido buffer de " + i + " bytes");
+            //Recibido mensaje de datos, calcular el tamaño de los datos del mensaje            
+            tam = head.getData();
+            logger.debug("Recibido MSG_DATA del servidor, recibiendo buffer de " + tam );
+            try {
+               readed = Util.readBuffer(this.input,buffer,tam);            
+            } catch (SocketTimeoutException ste) {
+               logger.debug("Time out de lectura del servidor");
+            }            
+            logger.debug("Recibido buffer de " + tam + " bytes");
             break;
          default :
-            logger.warn("Error en protocolo leyendo datos del cliente " + msg);
+            logger.warn("Error en protocolo leyendo datos del cliente " + buffer[0]);
             break;
       }
       
