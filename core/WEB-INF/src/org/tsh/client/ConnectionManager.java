@@ -39,6 +39,7 @@ public class ConnectionManager {
     private String serverUser;
     private String serverPassword;
     private MultiThreadedHttpConnectionManager connManager;
+    
 
     /**
 	 * Crea un manejador de conexiones con el servidor
@@ -82,7 +83,8 @@ public class ConnectionManager {
         }
         
         /////
-        this.connManager= new MultiThreadedHttpConnectionManager();
+        this.connManager=new MultiThreadedHttpConnectionManager();
+        //this.connManager.setMaxTotalConnections(10);
 
     }
 
@@ -109,76 +111,18 @@ public class ConnectionManager {
         return " ConnectionManager[" + this.serverURL + "," + this.useHTTPProxy + ","
                 + this.proxyHost + ":" + this.proxyPort + "]";
     }
-
-    /**
-	 * Abre una conexion con el servidor http
-	 * 
-	 * @return Conexion
-	 * @throws MalformedURLException
-	 * @throws IOException
-	 */
-    /*
-    public HttpURLConnection getURLConnection() throws MalformedURLException, IOException {
-        URL url = new URL(this.getServerURL());
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        urlConnection.setRequestMethod("POST");        
-        urlConnection.setDoOutput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setRequestProperty("Content-Type", "application/octet-stream");
-        urlConnection.setRequestProperty("Connection", "keep-alive");
-        return urlConnection;
-    }
-    */
-
-    public HttpURLConnection getURLConnection() throws MalformedURLException, IOException {
-    	URL url = new URL(this.getServerURL());
-    	System.getProperties().put("HTTPClient.dontChunkRequests", "true"); 
-    	System.getProperties().put("HTTPClient.disable_pipelining", "true"); 
-    	System.getProperties().put("HTTPClient.disableKeepAlives", "true");
-    	System.getProperties().put("HTTPClient.deferStreamed", "true");
-    	//System.getProperties().put("HTTPClient.forceHTTP_1.0", "true");
-    	
-    	HTTPClient.HttpURLConnection urlConnection = new HTTPClient.HttpURLConnection (url);
-    	urlConnection.setRequestMethod("POST");        
-    	urlConnection.setDoOutput(true);
-    	urlConnection.setUseCaches(false);
-    	urlConnection.setRequestProperty("Content-Type", "application/octet-stream");
-    	//urlConnection.setRequestProperty("Connection", "keep-alive");
-    	//urlConnection.setRequestProperty("Content-Length","500000000");
-    	return urlConnection;
-    }
-
-    /*
-    public HttpURLConnection getURLConnection() throws MalformedURLException, IOException {
-        URL url = new URL(this.getServerURL());
-        
-        //HttpClient client = new HttpClient(connectionManager);
-        HttpClient client = new HttpClient(new MultiThreadedHttpConnectionManager());
-        
-        PostMethod post = new PostMethod(this.getServerURL());        
-        post.addRequestHeader("Content-Type", "application/octet-stream");
-        //post.addRequestHeader("Connection", "keep-alive");
-        
-        //urlConnection.setRequestMethod("POST");        
-        //urlConnection.setDoOutput(true);
-        //urlConnection.setUseCaches(false);
-        //urlConnection.setRequestProperty("Content-Type", "application/octet-stream");
-        //urlConnection.setRequestProperty("Connection", "keep-alive");
-        client.executeMethod(post);
-        org.apache.commons.httpclient.util.HttpURLConnection urlConnection = 
-        		new org.apache.commons.httpclient.util.HttpURLConnection(post,url);
-        
-       
-        return urlConnection;
-    }
-    */
     
     public HttpConnection getHttpConnection() throws HttpRecoverableException, HttpException, IOException {
     			
-		HostConfiguration hconf = new HostConfiguration();    	
+		HostConfiguration hconf = new HostConfiguration();
+		if ( useHTTPProxy ) {
+		   //Hay que usar proxy
+		   hconf.setProxy(this.proxyHost,this.proxyPort);
+		}
 		hconf.setHost(new URI(this.getServerURL()));
-        //HttpConnection conn = connManager.getConnection(hconf);
-		HttpConnection conn = new HttpConnection(hconf);
+        HttpConnection conn = connManager.getConnection(hconf);
+        logger.debug("Conexiones en uso " +  connManager.getConnectionsInUse(hconf) + "/" + connManager.getConnectionsInUse());
+		//HttpConnection conn = new HttpConnection(hconf);
         conn.setSoTimeout(Constants.READ_TIMEOUT);
         return conn;
     }
