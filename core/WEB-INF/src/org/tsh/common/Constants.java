@@ -2,22 +2,27 @@ package org.tsh.common;
 
 /**
  * Fecha 09-oct-2003
- * 
+ *
  * @author jmgarcia
  */
 public final class Constants {
-
     //Id para decir que no hay sesion
+
+    /** DOCUMENT ME!*/
     public static final int NO_SESSION = -1;
 
     //Numero de conexiones maximas por servicio(valor por defecto)
+
+    /** DOCUMENT ME!*/
     public static final int MAXCONNECTIONS_CLIENT = 10;
 
     //Numero de timeouts antes de enviar una peticion de read.
+
+    /** DOCUMENT ME!*/
     public static final int MAXTIMEOUTS = 5;
 
     /** DOCUMENT ME! */
-    public static final int BUFFER = 200000;
+    public static final int MAX_READ = 64000;
 
     /** DOCUMENT ME! */
     public static final int READ_TIMEOUT = 400;
@@ -39,7 +44,6 @@ public final class Constants {
 
     /** Parametro servicio de la peticion */
     public static final String PARAM_SERVICE = "service";
-    
 
     /** Parametro para el envio de los datos */
     public static final String PARAM_DATA = "d";
@@ -51,14 +55,15 @@ public final class Constants {
     public static final String PARAM_NEXTSEQ = "ns";
 
     //Comandos del protocolo
+
     /** Comando para abrir una conexion con el servidor */
     public static final String COMMAND_OPEN = "o";
-    
+
     /** Comando para abrir una conexion de escritura con el servidor */
-    public static final String  COMMAND_OPENW = "ow";
-    
+    public static final String COMMAND_OPENW = "ow";
+
     /** Comando para abrir una conexion de lectura con el servidor */
-    public static final String  COMMAND_OPENR = "or";
+    public static final String COMMAND_OPENR = "or";
 
     /** Comando para cerrar una conexion */
     public static final String COMMAND_CLOSE = "c";
@@ -75,12 +80,21 @@ public final class Constants {
     /** Comando para pedir si existen mas datos que leer del servidor */
     public static final String COMMAND_READ = "r";
 
+    //Comandos de los buffers enviados
+    /** Es un mensaje de datos, el byte siguiente indicará el tamaño del mensaje */
+    public static final byte MSG_DATA = 55;
+    public static final byte MSG_CLOSE = 56;
+    
+    
     //Constantes de configuracion
+
     /** URL del servidor */
     public static final String CONFIG_SERVER = "org.tsh.client.org.tsh.server";
 
     /** Usar proxy */
     public static final String CONFIG_USEPROXY = "org.tsh.client.useProxy";
+
+  
 
     /** Host del proxy */
     public static final String CONFIG_PROXYHOST = "org.tsh.client.proxyHost";
@@ -90,5 +104,6 @@ public final class Constants {
 
     /** Usar https */
     public static final String CONFIG_USEHTTPS = "org.tsh.client.userHttps";
-
+    
+     
 }
