@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<digester-rules>
+   <object-create-rule pattern="server" classname="java.util.ArrayList" />
+  
+   <pattern value="server/service">
+      <object-create-rule classname="server.ServiceServerInfo" />
+      <call-method-rule pattern="name" methodname="setName" paramcount="0" />
+      <call-method-rule pattern="host" methodname="setHost" paramcount="0" />
+      <call-method-rule pattern="port" methodname="setPort" paramcount="0" />
+      <call-method-rule pattern="user" methodname="setUser" paramcount="0" />
+      <call-method-rule pattern="password" methodname="setPassword" paramcount="0" />      
+      <call-method-rule pattern="sessionTimeout" methodname="setSessionTimeout" paramcount="0" />            
+      <set-next-rule methodname="add" />
+   </pattern>
+  
+</digester-rules>
