@@ -180,7 +180,7 @@ public class ServiceManager implements Runnable {
                     //Recupero objeto de estadisticas y las pinta
                     IStat stat = (IStat)this.stats.get(proxy);
                     if ( stat != null ) {
-                        logger.info(proxy + " [e: " + stat.getSend() + "],[r:" + stat.getReceive() + "]");
+                        logger.info(proxy + " " + stat);
                     }
                 }
                 logger.info("Eliminado proxy de servicio " + this.service + ":" + this.numConn

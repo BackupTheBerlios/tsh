@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tsh.common.Constants;
+import org.tsh.common.IStat;
 import org.tsh.remote.RemoteHttpOutputStream;
 import org.tsh.remote.RemoteHttpInputStream;
 
@@ -38,16 +39,21 @@ public class RemoteConn {
 
     private RemoteConnReader rcr ;
     private RemoteConnWriter rcw ;
+
+	private IStat stat;
+	private ProxyHost proxy;
     
     /**
      * @param stream
      * @param stream2
      */
-    public RemoteConn(InputStream input, OutputStream output,ConnectionManager conn,String service) {        
+    public RemoteConn(InputStream input, OutputStream output,ConnectionManager conn,String service, IStat stat, ProxyHost proxy) {        
         this.input = input;
         this.output = output;        
         this.conn  = conn;
         this.service = service;
+        this.stat = stat;
+        this.proxy = proxy; 
     }
 
     /**
@@ -70,6 +76,8 @@ public class RemoteConn {
                 return;
             }
             
+            this.proxy.setId(id);
+            
             //Abrir RemoteHttpOutputStream
             outputServidor = new RemoteHttpOutputStream(id,service,conn.getHttpConnection());
             outputServidor.open();
@@ -89,8 +97,8 @@ public class RemoteConn {
         
         try {
 	        //Crear lector y escritor
-	        rcr = new RemoteConnReader(input,outputServidor,this);
-	        rcw = new RemoteConnWriter(output,inputServidor,this);
+	        rcr = new RemoteConnReader(input,outputServidor,this,this.stat);
+	        rcw = new RemoteConnWriter(output,inputServidor,this,this.stat);
 	        
 	        //Arrancar thread lector
 	        Thread t1 = new Thread (rcr);
@@ -104,7 +112,7 @@ public class RemoteConn {
             
         }
         catch (InterruptedException e) {
-            logger.debug ("Error en thread de conexion",e);
+            logger.warn ("Error en thread de conexion",e);
         }finally {
             this.close();
         }
@@ -125,14 +133,25 @@ public class RemoteConn {
         }
     }
     
-    public void finishReader() {
+    void finishReader() {
     	//TODO implementar
     	this.rcw.stop();
     }
     
-    public void finishWriter() {
+    void finishWriter() {
     	// TODO implementar
     	this.rcr.stop();
+    }
+    
+    void readerTimeout(RemoteConnReader rcr) {
+    	if ( rcr == this.rcr) {
+    	}    
+    }
+    
+    void writerTimeout(RemoteConnWriter rcw) {
+    	if ( rcw == this.rcw){
+    		
+    	}
     }
     
     
