@@ -45,11 +45,18 @@ public class RemoteConnReader implements Runnable {
     */
    public void run() {
       int readed = 0;
+      int total = 0 ;
       byte[] buffer = new byte[Constants.MAX_READ];
       try {
          while (readed >= 0 && !stop) {
             try {
+               output.reOpen();
                readed = input.read(buffer);
+               total += readed;
+               if ( total >= Constants.CONTENT_LENGTH) {
+                  total = readed;
+                  output.reOpen();                  
+               }               
                if (readed > 0) {
                   logger.debug("Leidos del cliente " + readed + " bytes");
                   output.writeBuffer(readed, buffer);
@@ -61,14 +68,14 @@ public class RemoteConnReader implements Runnable {
             }
          }
 
-      } catch (IOException e) {
+      } catch (Exception e) {
          // TODO que hay que hacer
          logger.warn("Bucle de lectura del cliente", e);
       } finally {
 
          // TODO El cliente cierra la conexion (se termina la comunicación
          // desde el lado cliente)
-         output.close();
+         //output.close();
 
          if (stop) {
             // TODO Termina limpiamente

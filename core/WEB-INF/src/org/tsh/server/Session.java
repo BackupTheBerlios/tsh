@@ -65,6 +65,9 @@ public class Session {
    //Timeout de la sesion
    private long timeout;
 
+   //Indica si hay que reconectar
+   private boolean reopen = false;
+
    /**
     * Constructor de sesion
     * 
@@ -157,6 +160,7 @@ public class Session {
     */
    public void open() throws UnknownHostException, IOException {
       this.socket = new Socket(InetAddress.getByName(this.host), this.port);
+      this.socket.setSoTimeout(Constants.READ_TIMEOUT);
       this.input = this.socket.getInputStream();
       this.output = this.socket.getOutputStream();
       logger.info("Abriendo conexion con " + this.host + ":" + this.port);
@@ -183,24 +187,31 @@ public class Session {
     */
    public void setResponseWriter(OutputStream out) {
 
-      logger.debug ("Entro en setResponseWriter");
+      logger.debug("Entro en setResponseWriter");
 
       try {
          int read = 0;
          int readed = 0;
          byte[] buffer = new byte[Constants.MAX_READ];
          //Leer datos del servidor
-         logger.debug( "Esperando a leer del servidor para enviar el buffer al cliente" );
-         while ((read = input.read(buffer)) >= 0) {
-            readed += read;
-            resetTime();
-            logger.debug("Enviando al cliente bytes " + read);
-            Util.writeMsgHead(out,new MsgHead(Constants.MSG_DATA,read));            
-            out.write(buffer, 0, read);
-            out.flush();
-            logger.debug( "2 Esperando a leer del servidor para enviar el buffer al cliente" );
-         }
 
+         while (!this.reopen && read >= 0) {
+            try {
+               logger.debug("Esperando a leer del servidor para enviar el buffer al cliente");
+               read = input.read(buffer);
+               if (read >= 0) {
+                  resetTime();
+
+                  logger.debug("Enviando al cliente bytes " + read);
+                  readed += read;
+
+                  Util.writeMsgHead(out, new MsgHead(Constants.MSG_DATA, read));
+                  out.write(buffer, 0, read);
+                  out.flush();
+               }
+            } catch (SocketTimeoutException ste) {
+            }            
+         }
       } catch (IOException e) {
          if (this.input != null) {
             logger.warn("Bucle de lectura", e);
@@ -208,33 +219,43 @@ public class Session {
       }
 
       try {
-         out.write(Constants.MSG_CLOSE);
+         if (this.reopen) {
+            resetTime();
+            Util.writeMsgHead(out, new MsgHead(Constants.MSG_REOPEN, 0));
+         } else {
+            Util.writeMsgHead(out, new MsgHead(Constants.MSG_CLOSE, 0));
+         }
          out.flush();
-      } catch (IOException e1) {
-         // TODO Auto-generated catch block
-         logger.warn("Enviando close al cliente ", e1);
+      } catch (IOException e1) {         
+         logger.warn("Enviando comando al cliente ", e1);
       }
 
       logger.debug("Termina el metodo setResponseWriter");
-      this.close();
+      if (!this.reopen) {
+         this.close();
+      } else {
+         logger.debug("Enviado MSG_REOPEN");
+         this.reopen = false;
+      }
    }
 
    /**
     * @param out
     * @param reader
     */
-   public void setRequestWriter(InputStream input) {      
-      //Leer datos y enviarlos al servidor      
+   public void setRequestWriter(InputStream input) {
+      //Leer datos y enviarlos al servidor
       int data = -1, tam = -1;
       boolean fin = false;
       MsgHead head = new MsgHead();
-      logger.debug ("Entro en setRequestWriter");
+      logger.debug("Entro en setRequestWriter");
       try {
          while (!fin) {
             //Leer cabecera del mensaje
             logger.debug("Leyendo cabecera de buffer del cliente");
-            if ( Util.readMsgHead(input,head) == -1 ) break;
-          
+            if (Util.readMsgHead(input, head) == -1)
+               break;
+
             switch (head.getMsg()) {
                case -1 :
                   //Se ha cerrado la conexion
@@ -244,11 +265,16 @@ public class Session {
                   //Cerra esta conexion (indicado por el cliente)
                   fin = true;
                   break;
+               case Constants.MSG_REOPEN :
+                  //Cerrar esta conexion para reabrirla
+                  this.reopen = true;
+                  fin = true;
+                  break;
                case Constants.MSG_DATA :
-                  //Recibido mensaje de datos                     
+                  //Recibido mensaje de datos
                   tam = head.getData();
-                  logger.debug("Recibiendo buffer de " + tam );
-                  
+                  logger.debug("Recibiendo buffer de " + tam);
+
                   for (int i = 0; i < tam && !fin;) {
                      try {
                         data = input.read();
@@ -256,7 +282,7 @@ public class Session {
                         resetTime();
                         if (data == -1) {
                            fin = true;
-                        }else {	                           	                           
+                        } else {
                            output.write(data);
                            output.flush();
                         }
@@ -269,7 +295,7 @@ public class Session {
                   logger.warn("Error en protocolo leyendo datos del cliente");
                   break;
             }
-            
+
          }
       } catch (IOException e) {
          if (this.output != null) {
@@ -277,7 +303,9 @@ public class Session {
          }
       }
       logger.debug("Termina el metodo setRequestWriter");
-      this.close();
+      if (Constants.MSG_REOPEN != head.getMsg()) {
+         this.close();
+      }
 
    }
 }

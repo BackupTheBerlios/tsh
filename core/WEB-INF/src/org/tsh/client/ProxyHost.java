@@ -158,13 +158,10 @@ public class ProxyHost implements Runnable {
                 this.clientOutput,
                 connectionManager,
                 service,
-                this.stat,this);
+                this.stat,this,this.serviceManager.getMaxConnectionTime());
 
         //Arranco la conexion remota
         rc.run();
-
-        //La sesion se ha cerrado (o dejado de utilizar)
-        //setId(Constants.NO_SESSION);
 
         //Se liberan recursos
         this.close();

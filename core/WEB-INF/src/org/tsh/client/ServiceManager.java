@@ -51,6 +51,8 @@ public class ServiceManager implements Runnable {
     //Estadisticas
     private Map stats = new HashMap();
 
+    private long maxConnTime;
+
     /**
 	 * Crea un manejador para este servicio
 	 * 
@@ -62,6 +64,11 @@ public class ServiceManager implements Runnable {
         this.service = service.getName();
         this.connManager = new ConnectionManager(service);
         this.maxConn = service.getMaxConnections();
+        this.maxConnTime = service.getMaxConnectionTime();
+    }
+    
+    public long getMaxConnectionTime() {
+       return this.maxConnTime;
     }
 
     /**

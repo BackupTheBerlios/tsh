@@ -32,7 +32,16 @@ public class ServiceServerInfo {
     //Timeout de la sesion
     private long sessionTimeout = 1800000;
 	
+    //Maximo tiempo de conexion de peticion
+    private long maxConnectionTime = 300000;
 	
+    public void setMaxConnectionTime (String time) {
+       this.maxConnectionTime = Long.parseLong(time);      
+    }
+    
+    public long getMaxConnectionTime() {
+       return this.maxConnectionTime;
+    }
 
 	/**
 	 * @return Returns the host.

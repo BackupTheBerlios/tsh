@@ -42,18 +42,21 @@ public class RemoteConn {
 
 	private IStat stat;
 	private ProxyHost proxy;
+
+   private long maxConnTime;
     
     /**
      * @param stream
      * @param stream2
      */
-    public RemoteConn(InputStream input, OutputStream output,ConnectionManager conn,String service, IStat stat, ProxyHost proxy) {        
+    public RemoteConn(InputStream input, OutputStream output,ConnectionManager conn,String service, IStat stat, ProxyHost proxy,long maxConnTime) {        
         this.input = input;
         this.output = output;        
         this.conn  = conn;
         this.service = service;
         this.stat = stat;
-        this.proxy = proxy; 
+        this.proxy = proxy;
+        this.maxConnTime = maxConnTime ;
     }
 
     /**
@@ -79,7 +82,7 @@ public class RemoteConn {
             this.proxy.setId(id);
             
             //Abrir RemoteHttpOutputStream
-            outputServidor = new RemoteHttpOutputStream(id,service,conn.getHttpConnection(),conn.getServerURL());
+            outputServidor = new RemoteHttpOutputStream(id,service,conn.getHttpConnection(),conn.getServerURL(),maxConnTime);
             outputServidor.open();
         
         }
@@ -141,17 +144,6 @@ public class RemoteConn {
     void finishWriter() {
     	// TODO implementar
     	this.rcr.stop();
-    }
-    
-    void readerTimeout(RemoteConnReader rcr) {
-    	if ( rcr == this.rcr) {
-    	}    
-    }
-    
-    void writerTimeout(RemoteConnWriter rcw) {
-    	if ( rcw == this.rcw){
-    		
-    	}
     }
     
     

@@ -59,6 +59,7 @@ public class ConnectionManager {
         this.useHTTPS = service.isUseHttps();
         this.serverUser = service.getUser();
         this.serverPassword = service.getPassword();
+        /*
         if (useHTTPProxy && !useHTTPS) {
             System.getProperties().put("proxySet", "true");
             System.getProperties().put("http.proxyHost", proxyHost);
@@ -84,7 +85,7 @@ public class ConnectionManager {
             });
 
         }
-        
+*/        
         /////
         this.connManager=new MultiThreadedHttpConnectionManager();
         //this.connManager.setMaxTotalConnections(10);
@@ -123,11 +124,12 @@ public class ConnectionManager {
 		   hconf.setProxy(this.proxyHost,this.proxyPort);
 		}
 		URI uri = new URI(this.getServerURL());
-		hconf.setHost(uri);
+		hconf.setHost(uri.getHost(),uri.getPort(),this.useHTTPS ? "https":"http");		
         HttpConnection conn = connManager.getConnection(hconf);
         logger.debug("Conexiones en uso " +  connManager.getConnectionsInUse(hconf) + "/" + connManager.getConnectionsInUse());
 		//HttpConnection conn = new HttpConnection(hconf);
-        conn.setSoTimeout(Constants.READ_TIMEOUT);       
+        conn.setSoTimeout(Constants.READ_TIMEOUT);  
+        conn.setSecure(this.useHTTPS);
                 
         
         return conn;
@@ -163,7 +165,7 @@ public class ConnectionManager {
       //conn.printLine("TE: trailers, deflate, gzip, compress");
       conn.printLine("TE: ");      
       conn.printLine("User-Agent: Mozilla/4.0 (compatible)");    	
-      conn.printLine("Accept-Language: es");
+      //conn.printLine("Accept-Language: es");
       conn.printLine("Content-type: application/octet-stream"); 
       conn.flushRequestOutputStream();
       

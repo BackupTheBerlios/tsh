@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.util.Date;
 
 import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.logging.Log;
@@ -36,16 +37,21 @@ public class RemoteHttpOutputStream {
    private BufferedReader reader = null;
    private String serverURL = null;
 
+   private long lastAccess;
+
+   private long maxConnTime;
+
    /**
     *  
     */
-   public RemoteHttpOutputStream(long id, String service, HttpConnection connection, String serverURL) {
+   public RemoteHttpOutputStream(long id, String service, HttpConnection connection, String serverURL,long maxConnTime) {
       super();
       //Obtiene una conexion
       conn = connection;
       this.id = id;
       this.service = service;
-      this.serverURL = serverURL;
+      this.serverURL = serverURL;  
+      this.maxConnTime = maxConnTime;
    }
 
    /**
@@ -66,6 +72,7 @@ public class RemoteHttpOutputStream {
    public void open() throws Exception {
       //Realiza la conexion
       if (conn != null) {
+         lastAccess = new Date().getTime();
          conn.open();
          ConnectionManager.writeRequestHeader(conn,serverURL);
          conn.printLine("Content-length: " + Constants.CONTENT_LENGTH);
@@ -95,6 +102,27 @@ public class RemoteHttpOutputStream {
       }
    }
 
+   /**
+    * Reabre una conexion de Lectura desde el servidor remoto
+    */
+   public void reOpen() throws Exception {
+      //Realiza la conexion
+      if (conn != null) {
+         if  (( new Date().getTime() - lastAccess) >= maxConnTime ) {
+            logger.debug("Realizando refresco de conexion de escritura en servidor");
+	         try {
+	            //Se envia mensaje de cerrar la conexion
+	            Util.writeMsgHead(this.getOutputStream(),new MsgHead(Constants.MSG_REOPEN,0));            
+	            this.getOutputStream().flush();
+	         } catch (IOException e) {
+	            logger.warn("Enviando mensaje de cerrar conexion de escritura en servidor para reabrirlo", e);
+	         }         
+	         conn.close();         
+	         open();
+         }
+      }
+   }
+   
    /**
     * Cierra la conexion, libera recursos
     */
@@ -126,7 +154,7 @@ public class RemoteHttpOutputStream {
     * @param tam
     * @param buffer
     */
-   public void writeBuffer(int tam, byte[] buffer) throws IOException {      
+   public void writeBuffer(int tam, byte[] buffer) throws IOException {       
       //Escribir cabecera del mensaje
       Util.writeMsgHead(this.getOutputStream(),new MsgHead(Constants.MSG_DATA,tam));            
       //Escribir buffer

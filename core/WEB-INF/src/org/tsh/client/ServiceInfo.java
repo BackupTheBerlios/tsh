@@ -22,12 +22,21 @@ public class ServiceInfo {
     private String user = null;
     private String password = null;     
     private int maxConnections = Constants.MAXCONNECTIONS_CLIENT;
+    private long maxConnectionTime = 300000;
 
     /**
      * @return
      */
     public String getProxyUser() {
         return proxyUser;
+    }
+    
+    public void setMaxConnectionTime (String time) {
+       this.maxConnectionTime = Long.parseLong(time);      
+    }
+    
+    public long getMaxConnectionTime() {
+       return this.maxConnectionTime;
     }
 
     /**

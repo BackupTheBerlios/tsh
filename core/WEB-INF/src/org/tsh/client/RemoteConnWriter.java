@@ -62,8 +62,8 @@ public class RemoteConnWriter implements Runnable {
                }
             } catch (SocketTimeoutException ste) {
                logger.debug("Timeout de lectura de stream de servidor");
-            }
-      } catch (IOException e) {
+            } 
+      } catch (IOException e) {         
          logger.debug("Error en bucle de lectura del servidor", e);
       } finally {
 
