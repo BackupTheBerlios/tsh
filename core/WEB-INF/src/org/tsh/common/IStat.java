@@ -30,4 +30,14 @@ public interface IStat {
 	 * @return
 	 */
     public long getSend();
+
+   /**
+    * 
+    */
+   public void startConn();
+
+   /**
+    * 
+    */
+   public void stopConn();
 }
